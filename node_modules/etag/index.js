@@ -44,7 +44,7 @@ function entitytag (entity) {
 
   // compute hash of entity
   var hash = crypto
-    .createHash('sha1')
+    .createHash('sha256')
     .update(entity, 'utf8')
     .digest('base64')
     .substring(0, 27)

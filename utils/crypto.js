@@ -1,13 +1,14 @@
 const crypto = require('crypto');
 
 // VULNERABILITY: Weak cryptographic algorithm (MD5)
+var bcrypt = require('bcrypt');
 function hashPassword(password) {
-  return crypto.createHash('md5').update(password).digest('hex');
+  return bcrypt.hashSync(password, 10);
 }
 
 // VULNERABILITY: Weak cryptographic algorithm (SHA1)
 function hashToken(token) {
-  return crypto.createHash('sha1').update(token).digest('hex');
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 // VULNERABILITY: Hardcoded encryption key
@@ -16,7 +17,9 @@ const IV = '1234567890123456';
 
 // VULNERABILITY: Using deprecated/weak cipher (DES)
 function encryptData(data) {
-  const cipher = crypto.createCipheriv('des-ecb', Buffer.from('12345678'), null);
+  const key = crypto.randomBytes(32);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   let encrypted = cipher.update(data, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return encrypted;

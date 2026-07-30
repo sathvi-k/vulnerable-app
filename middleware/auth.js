@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 // VULNERABILITY: Hardcoded JWT secret
-const JWT_SECRET = 'hardcoded-jwt-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // VULNERABILITY: Weak authentication middleware
 function authenticate(req, res, next) {

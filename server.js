@@ -1,4 +1,5 @@
 const express = require('express');
+const helmet = require('helmet');
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
 const yaml = require('js-yaml');
@@ -13,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -22,8 +24,7 @@ const users = [
   { id: 2, username: 'bob', role: 'user' }
 ];
 
-// CODE VULN: Hardcoded secret
-const JWT_SECRET = 'super-secret-jwt-key-12345';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Home route
 app.get('/', (req, res) => {
@@ -66,7 +67,7 @@ app.get('/api/ping', (req, res) => {
 
 // CODE VULN: Path Traversal
 app.get('/api/file', (req, res) => {
-  const filename = req.query.name;
+  const filename = path.basename(req.query.name);
   const filepath = path.join(__dirname, 'uploads', filename);
   fs.readFile(filepath, 'utf8', (err, data) => {
     if (err) return res.status(404).send('File not found');
@@ -77,7 +78,7 @@ app.get('/api/file', (req, res) => {
 // CODE VULN: XSS - Reflected user input
 app.get('/api/search', (req, res) => {
   const query = req.query.q;
-  res.send(`<html><body><h1>Results for: ${query}</h1></body></html>`);
+  res.contentType('text/plain').send(`Results for: ${query}`);
 });
 
 // Parse YAML config - uses js-yaml (vulnerable)
@@ -93,8 +94,9 @@ app.post('/api/config', (req, res) => {
 // Render template - uses ejs (vulnerable)
 app.post('/api/render', (req, res) => {
   try {
-    const { template, data } = req.body;
-    const rendered = ejs.render(template, data || {});
+    const { data } = req.body;
+    const safeTemplate = 'Data: <%= JSON.stringify(data) %>';
+    const rendered = ejs.render(safeTemplate, { data: data || {} });
     res.send(rendered);
   } catch (err) {
     res.status(400).json({ error: 'Template error' });
@@ -105,7 +107,7 @@ app.post('/api/render', (req, res) => {
 app.post('/api/markdown', (req, res) => {
   try {
     const html = marked.parse(req.body.markdown);
-    res.send(html);
+    res.contentType('text/plain').send(html);
   } catch (err) {
     res.status(400).json({ error: 'Markdown error' });
   }
@@ -137,9 +139,17 @@ app.get('/api/time', (req, res) => {
 // Render with handlebars (vulnerable)
 app.post('/api/handlebars', (req, res) => {
   try {
-    const template = handlebars.compile(req.body.template);
+    const safeTemplates = {
+      greeting: 'Hello {{name}}!',
+      welcome: 'Welcome {{name}} to {{site}}'
+    };
+    const templateKey = req.body.template;
+    if (!Object.prototype.hasOwnProperty.call(safeTemplates, templateKey)) {
+      return res.status(400).json({ error: 'Unknown template' });
+    }
+    const template = handlebars.compile(safeTemplates[templateKey]);
     const result = template(req.body.data || {});
-    res.send(result);
+    res.contentType('text/plain').send(result);
   } catch (err) {
     res.status(400).json({ error: 'Handlebars error' });
   }
@@ -154,8 +164,13 @@ app.post('/api/merge', (req, res) => {
 
 // CODE VULN: Open Redirect
 app.get('/api/redirect', (req, res) => {
+  const allowedUrls = ['/', '/home', '/login'];
   const url = req.query.url;
-  res.redirect(url);
+  if (allowedUrls.includes(url)) {
+    res.redirect(url);
+  } else {
+    res.redirect('/');
+  }
 });
 
 const PORT = process.env.PORT || 3000;

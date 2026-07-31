@@ -16,7 +16,9 @@ const IV = '1234567890123456';
 
 // VULNERABILITY: Using deprecated/weak cipher (DES)
 function encryptData(data) {
-  const cipher = crypto.createCipheriv('des-ecb', Buffer.from('12345678'), null);
+  const key = crypto.randomBytes(32);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   let encrypted = cipher.update(data, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return encrypted;

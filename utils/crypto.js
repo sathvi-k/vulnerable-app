@@ -7,7 +7,7 @@ function hashPassword(password) {
 
 // VULNERABILITY: Weak cryptographic algorithm (SHA1)
 function hashToken(token) {
-  return crypto.createHash('sha1').update(token).digest('hex');
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 // VULNERABILITY: Hardcoded encryption key

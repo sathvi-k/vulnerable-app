@@ -5,7 +5,7 @@ module.exports = {
     port: 27017,
     database: 'vulnerable_app',
     username: 'admin',
-    password: 'password123',  // Hardcoded password
+    password: process.env.DB_PASSWORD,
     connectionString: 'mongodb://admin:password123@localhost:27017/vulnerable_app'
   },
   production: {

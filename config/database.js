@@ -13,7 +13,7 @@ module.exports = {
     port: 27017,
     database: 'vulnerable_app_prod',
     username: 'produser',
-    password: 'ProdP@ssw0rd!',  // Hardcoded production password
+    password: process.env.DB_PROD_PASSWORD,
     apiKey: 'sk-1234567890abcdef'  // Hardcoded API key
   }
 };

@@ -11,8 +11,10 @@ const handlebars = require('handlebars');
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const helmet = require('helmet');
 
 const app = express();
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
